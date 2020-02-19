@@ -1,0 +1,10 @@
+version : '3.7'
+services:
+    nginx:
+        image: wp
+        container_name: wordpress
+        volumes:
+            - ./html:/www
+            - ./config:/etc/nginx/conf.d
+        ports:
+            - '8080:80'

@@ -1,25 +1,19 @@
-FROM alpine:latest as stage-1
+FROM sunnybase/nginx:latest as stage-1
 
 #Set mirrors
 RUN echo "https://mirror.leaseweb.com/alpine/latest-stable/main" > /etc/apk/repositories \
 	&& echo "https://mirror.leaseweb.com/alpine/latest-stable/community" >>/etc/apk/repositories \
-	&& apk add --no-cache nginx supervisor php7-fpm php7-mcrypt php7-openssl \
+	&& apk add --no-cache supervisor php7-fpm php7-mcrypt php7-openssl \
         	php7-json php7-dom php7-zip php7-mysqli php7-ctype php7-intl \
        	 	php7-gd php7-xmlreader php7-xml php7-zlib  php7-phar \
 	        php7-exif php7-fileinfo php7-mbstring php7-sodium \
 	        php7-imagick php7-gd php7-simplexml \
-        	php7-ftp php7-sockets \	
-	&& mkdir -p /run/nginx \
-	&& adduser -D -g 'www' www \
-	&& mkdir /www \
-	&& chown -R www:www /var/lib/nginx \
-	&& chown -R www:www /www \
-	&& mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig \
+        	php7-ftp php7-sockets \
 	&& rm -rf /var/cache/apk/*
 
 #Define PHP environment
-ENV PHP_FPM_USER="www" \
-	PHP_FPM_GROUP="www" \
+ENV PHP_FPM_USER="nginx" \
+	PHP_FPM_GROUP="nginx" \
 	PHP_FPM_LISTEN_MODE="0660" \
 	PHP_MEMORY_LIMIT="512M" \
 	PHP_MAX_UPLOAD="128M" \
@@ -47,17 +41,7 @@ RUN sed -i "s|;listen.owner\s*=\s*nobody|listen.owner = ${PHP_FPM_USER}|g" /etc/
 	&& sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo= ${PHP_CGI_FIX_PATHINFO}|i" /etc/php7/php.ini
 
 FROM stage-1 as final
-COPY config/nginx.conf /etc/nginx/nginx.conf
-COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY html/index.php /www/index.php
-
-# Make sure files/folders needed by the processes are accessable when they run under the nobody user
-RUN chown -R nobody.nobody /www && \
-  chown -R nobody.nobody /run && \
-  chown -R nobody.nobody /var/lib/nginx && \
-  chown -R nobody.nobody /var/log/nginx
-
-EXPOSE 80
+COPY supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 STOPSIGNAL SIGTERM
 
