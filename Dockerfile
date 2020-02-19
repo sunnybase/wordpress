@@ -7,7 +7,7 @@ RUN echo "https://mirror.leaseweb.com/alpine/latest-stable/main" > /etc/apk/repo
         	php7-json php7-dom php7-zip php7-mysqli php7-ctype php7-intl \
        	 	php7-gd php7-xmlreader php7-xml php7-zlib  php7-phar \
 	        php7-exif php7-fileinfo php7-mbstring php7-sodium \
-	        php7-imagick php7-gd php7-simplexml \
+	        php7-imagick php7-gd php7-simplexml curl \
         	php7-ftp php7-sockets \
 	&& rm -rf /var/cache/apk/*
 
@@ -40,7 +40,11 @@ RUN sed -i "s|;listen.owner\s*=\s*nobody|listen.owner = ${PHP_FPM_USER}|g" /etc/
 	&& sed -i "s|;*post_max_size =.*|post_max_size = ${PHP_MAX_POST}|i" /etc/php7/php.ini \
 	&& sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo= ${PHP_CGI_FIX_PATHINFO}|i" /etc/php7/php.ini
 
-FROM stage-1 as final
+FROM stage-1 as wp-stage
+# wp-cli
+RUN curl -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+    && chmod +x /usr/local/bin/wp
+
 COPY supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 STOPSIGNAL SIGTERM
